@@ -12,6 +12,7 @@ import { inngest, inngestServe, registerCronWorkflow } from "./inngest";
 import { yaasWorkflow } from "./workflows/yaasWorkflow";
 import { yaasAgent } from "./agents/yaasAgent";
 import { registerArticlesApi } from "./api/articlesRoute";
+import { frontendRoute } from "./api/frontendRoute";
 
 class ProductionPinoLogger extends MastraLogger {
   protected logger: pino.Logger;
@@ -216,26 +217,8 @@ export const mastra = new Mastra({
 
       // YAAS Articles API
       ...registerArticlesApi(),
-
       // Serve the YAAS website homepage
-      {
-        path: "/",
-        method: "GET",
-        createHandler: async () => {
-          return async (c: any) => {
-            try {
-              const fs = await import("fs/promises");
-              const path = await import("path");
-              const htmlPath = path.join(process.cwd(), "public", "index.html");
-              const html = await fs.readFile(htmlPath, "utf-8");
-              return c.html(html);
-            } catch (error) {
-              console.error("Error serving index.html:", error);
-              return c.text("Error loading page", 500);
-            }
-          };
-        },
-      },
+      ...frontendRoute(),
     ],
   },
   logger:
