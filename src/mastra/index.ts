@@ -223,11 +223,16 @@ export const mastra = new Mastra({
         method: "GET",
         createHandler: async () => {
           return async (c: any) => {
-            const fs = await import("fs/promises");
-            const path = await import("path");
-            const htmlPath = path.join(process.cwd(), "public", "index.html");
-            const html = await fs.readFile(htmlPath, "utf-8");
-            return c.html(html);
+            try {
+              const fs = await import("fs/promises");
+              const path = await import("path");
+              const htmlPath = path.join(process.cwd(), "public", "index.html");
+              const html = await fs.readFile(htmlPath, "utf-8");
+              return c.html(html);
+            } catch (error) {
+              console.error("Error serving index.html:", error);
+              return c.text("Error loading page", 500);
+            }
           };
         },
       },
