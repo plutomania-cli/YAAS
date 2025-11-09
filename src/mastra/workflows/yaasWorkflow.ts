@@ -43,9 +43,7 @@ const discoverAndCurateArticles = createStep({
 
       logger?.info("🤖 [YAAS Workflow] Calling AI agent for content curation");
 
-      const response = await yaasAgent.generateLegacy([
-        { role: "user", content: prompt },
-      ]);
+      const response = await yaasAgent.generate(prompt);
 
       logger?.info("✅ [YAAS Workflow] AI agent completed content curation");
       logger?.info("📄 [YAAS Workflow] Response:", {
