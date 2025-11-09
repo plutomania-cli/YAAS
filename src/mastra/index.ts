@@ -6,13 +6,14 @@ import pino from "pino";
 import { MCPServer } from "@mastra/mcp";
 import { NonRetriableError } from "inngest";
 import { z } from "zod";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 import { sharedPostgresStorage } from "./storage";
 import { inngest, inngestServe, registerCronWorkflow } from "./inngest";
 import { yaasWorkflow } from "./workflows/yaasWorkflow";
 import { yaasAgent } from "./agents/yaasAgent";
 import { registerArticlesApi } from "./api/articlesRoute";
-import { frontendRoute } from "./api/frontendRoute";
 
 class ProductionPinoLogger extends MastraLogger {
   protected logger: pino.Logger;
@@ -73,9 +74,6 @@ export const mastra = new Mastra({
     }),
   },
   bundler: {
-    // A few dependencies are not properly picked up by
-    // the bundler if they are not added directly to the
-    // entrypoint.
     externals: [
       "@slack/web-api",
       "inngest",
@@ -83,7 +81,6 @@ export const mastra = new Mastra({
       "hono",
       "hono/streaming",
     ],
-    // sourcemaps are good for debugging.
     sourcemap: true,
   },
   server: {
@@ -104,12 +101,9 @@ export const mastra = new Mastra({
           });
           if (error instanceof MastraError) {
             if (error.id === "AGENT_MEMORY_MISSING_RESOURCE_ID") {
-              // This is typically a non-retirable error. It means that the request was not
-              // setup correctly to pass in the necessary parameters.
               throw new NonRetriableError(error.message, { cause: error });
             }
           } else if (error instanceof z.ZodError) {
-            // Validation errors are never retriable.
             throw new NonRetriableError(error.message, { cause: error });
           }
 
@@ -118,107 +112,32 @@ export const mastra = new Mastra({
       },
     ],
     apiRoutes: [
-      // ======================================================================
-      // Inngest Integration Endpoint
-      // ======================================================================
-      // This API route is used to register the Mastra workflow (inngest function) on the inngest server
       {
         path: "/api/inngest",
         method: "ALL",
         createHandler: async ({ mastra }) => inngestServe({ mastra, inngest }),
-        // The inngestServe function integrates Mastra workflows with Inngest by:
-        // 1. Creating Inngest functions for each workflow with unique IDs (workflow.${workflowId})
-        // 2. Setting up event handlers that:
-        //    - Generate unique run IDs for each workflow execution
-        //    - Create an InngestExecutionEngine to manage step execution
-        //    - Handle workflow state persistence and real-time updates
-        // 3. Establishing a publish-subscribe system for real-time monitoring
-        //    through the workflow:${workflowId}:${runId} channel
       },
-
-      // ======================================================================
-      // Connector Webhook Triggers
-      // ======================================================================
-      // Register your connector webhook handlers here using the spread operator.
-      // Each connector trigger should be defined in src/triggers/{connectorName}Triggers.ts
-      //
-      // PATTERN FOR ADDING A NEW CONNECTOR TRIGGER:
-      //
-      // 1. Create a trigger file: src/triggers/{connectorName}Triggers.ts
-      //    (See src/triggers/exampleConnectorTrigger.ts for a complete example)
-      //
-      // 2. Create a workflow: src/mastra/workflows/{connectorName}Workflow.ts
-      //    (See src/mastra/workflows/linearIssueWorkflow.ts for an example)
-      //
-      // 3. Import both in this file:
-      //    ```typescript
-      //    import { register{ConnectorName}Trigger } from "../triggers/{connectorName}Triggers";
-      //    import { {connectorName}Workflow } from "./workflows/{connectorName}Workflow";
-      //    ```
-      //
-      // 4. Register the trigger in the apiRoutes array below:
-      //    ```typescript
-      //    ...register{ConnectorName}Trigger({
-      //      triggerType: "{connector}/{event.type}",
-      //      handler: async (mastra, triggerInfo) => {
-      //        const logger = mastra.getLogger();
-      //        logger?.info("🎯 [{Connector} Trigger] Processing {event}", {
-      //          // Log relevant fields from triggerInfo.params
-      //        });
-      //
-      //        // Create a unique thread ID for this event
-      //        const threadId = `{connector}-{event}-${triggerInfo.params.someUniqueId}`;
-      //
-      //        // Start the workflow
-      //        const run = await {connectorName}Workflow.createRunAsync();
-      //        return await run.start({
-      //          inputData: {
-      //            threadId,
-      //            ...triggerInfo.params,
-      //          },
-      //        });
-      //      }
-      //    })
-      //    ```
-      //
-      // ======================================================================
-      // EXAMPLE: Linear Issue Creation Webhook
-      // ======================================================================
-      // Uncomment to enable Linear webhook integration:
-      //
-      // ...registerLinearTrigger({
-      //   triggerType: "linear/issue.created",
-      //   handler: async (mastra, triggerInfo) => {
-      //     // Extract what you need from the full payload
-      //     const data = triggerInfo.payload?.data || {};
-      //     const title = data.title || "Untitled";
-      //
-      //     // Start your workflow
-      //     const run = await exampleWorkflow.createRunAsync();
-      //     return await run.start({
-      //       inputData: {
-      //         message: `Linear Issue: ${title}`,
-      //         includeAnalysis: true,
-      //       }
-      //     });
-      //   }
-      // }),
-      //
-      // To activate:
-      // 1. Uncomment the code above
-      // 2. Import at the top: import { registerLinearTrigger } from "../triggers/exampleConnectorTrigger";
-      //
-      // ======================================================================
-
-      // Add more connector triggers below using the same pattern
-      // ...registerGithubTrigger({ ... }),
-      // ...registerSlackTrigger({ ... }),
-      // ...registerStripeWebhook({ ... }),
 
       // YAAS Articles API
       ...registerArticlesApi(),
+
       // Serve the YAAS website homepage
-      ...frontendRoute(),
+      {
+        path: "/",
+        method: "GET",
+        createHandler: async () => {
+          return async (c: any) => {
+            try {
+              const htmlPath = join(process.cwd(), "public", "index.html");
+              const html = readFileSync(htmlPath, "utf-8");
+              return c.html(html);
+            } catch (error) {
+              console.error("Error serving index.html:", error);
+              return c.text("Error loading page", 500);
+            }
+          };
+        },
+      },
     ],
   },
   logger:
@@ -234,7 +153,6 @@ export const mastra = new Mastra({
 });
 
 /*  Sanity check 1: Throw an error if there are more than 1 workflows.  */
-// !!!!!! Do not remove this check. !!!!!!
 if (Object.keys(mastra.getWorkflows()).length > 1) {
   throw new Error(
     "More than 1 workflows found. Currently, more than 1 workflows are not supported in the UI, since doing so will cause app state to be inconsistent.",
@@ -242,7 +160,6 @@ if (Object.keys(mastra.getWorkflows()).length > 1) {
 }
 
 /*  Sanity check 2: Throw an error if there are more than 1 agents.  */
-// !!!!!! Do not remove this check. !!!!!!
 if (Object.keys(mastra.getAgents()).length > 1) {
   throw new Error(
     "More than 1 agents found. Currently, more than 1 agents are not supported in the UI, since doing so will cause app state to be inconsistent.",
