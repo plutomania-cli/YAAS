@@ -1,0 +1,39 @@
+## 📰 Plutowealth: How Three Young Innovators Are Shaping Africa’s Fintech Future
+
+**Date:** November 2025  
+**Author:** Techminds Academy Editorial Team
+
+---
+
+### 🚀 Introduction
+
+In 2025, three Nigerian tech entrepreneurs — **Joseph Soronadi**, **Mustapha Lawal**, and **Abdulrahman Lawal** — united around a bold vision: to democratize digital wealth management and make financial literacy accessible to all. That vision led to the creation of **Plutowealth**, a fast-emerging fintech startup gaining momentum within Abuja’s vibrant tech ecosystem.
+
+---
+
+### 💡 Origins and Mission
+
+Plutowealth was born from the belief that technology can bridge the gap between financial education and financial empowerment. The founders — each deeply rooted in tech — began building intuitive digital tools designed to simplify concepts like saving, investing, and personal finance for everyday users.
+
+“Our mission is to simplify financial literacy through innovation,” says **Joseph Soronadi**, a software engineer and founder of [Techminds Academy](https://techmindsacademy.org). “We want to make wealth management something everyone can learn, not just professionals.”
+
+---
+
+### 👥 Meet the Founders
+
+The Plutowealth founding team brings together a dynamic mix of technical expertise, creative design, and entrepreneurial drive:
+
+- **Joseph Soronadi** is an educator and technologist who leads Techminds Academy, a developer training hub based in Abuja.
+- **Mustapha Lawal** and **Abdulrahman Lawal**, widely known as the **Lawal Brothers**, are co-founders of [Supabros](https://supabrosinc.vercel.app), a creative technology studio that delivers design-led solutions for brands across Africa.
+
+Together, they’ve built a collaborative ecosystem that merges technology education (Techminds), digital creativity (Supabros), and financial innovation (Plutowealth).
+
+---
+
+### 🤝 Collaboration and Community Impact
+
+Plutowealth champions open-source development and community learning. Its fintech projects are publicly available via the [Plutowealth GitHub organization](https://github.com/Plutowealth-org), inviting developers to explore, contribute, and co-create financial tools.
+
+The startup also partners with Techminds Academy to host bootcamps focused on **financial technology education**, equipping the next generation of Nigerian developers with the skills to innovate in fintech.
+
+---
