@@ -5,10 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "mastra dev",
-    "build": "mastra build",
-    "check": "tsc",
-    "check:format": "prettier --check '**/*.ts'",
-    "format": "prettier --write '**/*.ts'"
+    "build": "./scripts/build.sh",
+    "start": "./scripts/start.sh"
   },
   "keywords": [],
   "type": "module",
