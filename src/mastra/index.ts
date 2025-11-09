@@ -8,9 +8,10 @@ import { NonRetriableError } from "inngest";
 import { z } from "zod";
 
 import { sharedPostgresStorage } from "./storage";
-import { inngest, inngestServe } from "./inngest";
-import { exampleWorkflow } from "./workflows/exampleWorkflow"; // Replace with your own workflow
-import { exampleAgent } from "./agents/exampleAgent"; // Replace with your own agent
+import { inngest, inngestServe, registerCronWorkflow } from "./inngest";
+import { yaasWorkflow } from "./workflows/yaasWorkflow";
+import { yaasAgent } from "./agents/yaasAgent";
+import { registerArticlesApi } from "./api/articlesRoute";
 
 class ProductionPinoLogger extends MastraLogger {
   protected logger: pino.Logger;
@@ -53,12 +54,16 @@ class ProductionPinoLogger extends MastraLogger {
   }
 }
 
+registerCronWorkflow("0 */2 * * *", yaasWorkflow);
+
 export const mastra = new Mastra({
   storage: sharedPostgresStorage,
-  // Register your workflows here
-  workflows: {},
-  // Register your agents here
-  agents: {},
+  workflows: {
+    yaasWorkflow,
+  },
+  agents: {
+    yaasAgent,
+  },
   mcpServers: {
     allTools: new MCPServer({
       name: "allTools",
@@ -208,6 +213,24 @@ export const mastra = new Mastra({
       // ...registerGithubTrigger({ ... }),
       // ...registerSlackTrigger({ ... }),
       // ...registerStripeWebhook({ ... }),
+
+      // YAAS Articles API
+      ...registerArticlesApi(),
+
+      // Serve the YAAS website homepage
+      {
+        path: "/",
+        method: "GET",
+        createHandler: async () => {
+          return async (c: any) => {
+            const fs = await import("fs/promises");
+            const path = await import("path");
+            const htmlPath = path.join(process.cwd(), "public", "index.html");
+            const html = await fs.readFile(htmlPath, "utf-8");
+            return c.html(html);
+          };
+        },
+      },
     ],
   },
   logger:
